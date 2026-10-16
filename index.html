@@ -77,7 +77,7 @@ const PROV={"Punjab":["Lahore","Rawalpindi","Faisalabad","Multan","Gujranwala","
 let CATS=[["Mobiles & Electronics","📱",["Mobile Phones","Tablets","Laptops","TVs","Cameras","Accessories"]],["Cars & Vehicles","🚗",["Cars","Motorcycles","Bicycles","Spare Parts"]],["Property","🏠",["Houses","Plots","Flats","Shops"]],["Fashion & Clothing","👕",["Men","Women","Shoes","Watches"]],["Furniture","🛋️",["Sofas","Beds","Tables","Wardrobes"]],["Home & Kitchen","🍳",["Appliances","Kitchenware","Decor"]],["Beauty & Cosmetics","💄",["Makeup","Skincare","Hair care"]],["Agriculture","🌾",["Tractors","Livestock","Seeds & Crops","Farm Tools"]],["Jobs & Services","🧰",["Jobs","Repair","Tutors","Other Services"]],["Kids & Toys","🧸",["Toys","Baby Gear","Kids Clothes"]],["Sports","⚽",["Cricket","Gym & Fitness","Other Sports"]],["Other","📦",["Other"]]];
 let U=null,ADM=false,FAV=new Set(),F={q:"",cat:"",city:"",min:"",max:"",cond:"",neg:false,sort:"new"},IM=[],EDIT=null,AT="pe",rk=0,dk=0,avB=null;
 const IMG=p=>`${URLB}/storage/v1/object/public/listing-images/${p}`,emo=n=>(CATS.find(c=>c[0]==n)||[])[1]||"📦",provOf=c=>Object.keys(PROV).find(p=>PROV[p].includes(c))||"";
-const toast=t=>{const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),3000)};
+const toast=t=>{const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),5500)};
 let CUR=location.hash.replace(/^#\/?/,"");const go=h=>{CUR=String(h).replace(/^#\/?/,"");try{history.replaceState(null,"","#/"+CUR)}catch(e){}route()},dlg=h=>{$("#db2").innerHTML=h;if(!$("#dlg").open)$("#dlg").showModal()};
 const wa=n=>{n=String(n||"").replace(/\D/g,"");return n.startsWith("0")?"92"+n.slice(1):n.length==10?"92"+n:n};
 const opt=(arr,v,first)=>(first?`<option value="">${first}</option>`:"")+arr.map(x=>`<option ${x==v?"selected":""}>${esc(x)}</option>`).join("");
@@ -88,7 +88,7 @@ const card=a=>`<a class="card" href="#/l/${a.id}"><div class="img">${pic(a)}<div
 const live=()=>sb.from("listings_public").select("*").eq("status","approved").eq("hidden",false).eq("sold",false);
 const avt=p=>`<div class="av">${p&&p.avatar_path?`<img src="${esc(IMG(p.avatar_path))}" alt="">`:esc(((p||{}).name||"S")[0])}</div>`;
 // ----- auth
-sb.auth.onAuthStateChange((ev,s)=>{U=s?s.user:null;setTimeout(async()=>{ADM=false;FAV=new Set();if(U){try{ADM=(await sb.rpc("is_admin")).data===true;const{data}=await sb.from("favorites").select("listing_id");(data||[]).forEach(f=>FAV.add(f.listing_id))}catch(e){}}
+sb.auth.onAuthStateChange((ev,s)=>{const nu=s?s.user:null,chg=(nu?nu.id:null)!==(U?U.id:null);U=nu;if(!chg&&ev!="PASSWORD_RECOVERY"&&ev!="INITIAL_SESSION")return;setTimeout(async()=>{ADM=false;FAV=new Set();if(U){try{ADM=(await sb.rpc("is_admin")).data===true;const{data}=await sb.from("favorites").select("listing_id");(data||[]).forEach(f=>FAV.add(f.listing_id))}catch(e){}}
  $("#acct").href=U?"#/dash":"#/auth/login";$("#acct").lastChild.textContent=U?"My Ads":"Login";
  if(ev=="PASSWORD_RECOVERY")return go("#/auth/reset");route(1)},0)});
 function authP(m){m=m||"login";
@@ -264,21 +264,22 @@ async function orderP(id){
  if(o.status=="pending_verification")b+='<div class="box"><b>⏳ Waiting for admin verification</b><div class="note">Your promotion starts only after the admin confirms your payment.</div></div>';
  if(open){
   b+=M.length?`<div class="box"><b>How to pay ${rs(o.amount)}</b>${M.map(m=>`<div><b>${m[0]}</b>${m[1].map(r=>`<div class="m">${r[0]}: <b style="color:var(--tx)">${esc(r[1])}</b></div>`).join("")}</div>`).join("")}<div class="note">Send exactly ${rs(o.amount)}, then submit the details below.</div></div>`:'<div class="warn">The admin has not added payment details yet. Please check back soon.</div>';
-  if(M.length)b+=`<div class="box"><b>Submit payment details</b><input value="${esc(o.id)}" readonly><select id="pM">${M.map(m=>`<option>${m[0]}</option>`).join("")}</select><input id="pT" maxlength="40" placeholder="Transaction / reference ID"><label class="note">Payment screenshot<input id="pS" type="file" accept="image/jpeg,image/png,image/webp"></label><textarea id="pN" rows="2" maxlength="300" placeholder="Additional note (optional)"></textarea><button class="pri" id="pB" onclick="submitPay('${esc(o.id)}')">Submit for verification</button><div class="note">Your screenshot is stored privately. Only you and the admin can see it. Never include card numbers or PINs.</div></div>`;
+  if(M.length)b+=`<div class="box"><b>Submit payment details</b><input value="${esc(o.id)}" readonly><select id="pM">${M.map(m=>`<option>${m[0]}</option>`).join("")}</select><input id="pT" maxlength="40" placeholder="Transaction / reference ID" value="${esc(dr("pT"))}" oninput="sv(this)"><label class="note">Payment screenshot<input id="pS" type="file" accept="image/*" onchange="pf(this)"><span id="pFn" class="note"></span></label><textarea id="pN" rows="2" maxlength="300" placeholder="Additional note (optional)" oninput="sv(this)">${esc(dr("pN"))}</textarea><button class="pri" id="pB" onclick="submitPay('${esc(o.id)}')">Submit for verification</button><div id="pMsg" class="note" style="color:#d33;font-weight:600"></div><div class="note">Your screenshot is stored privately. Only you and the admin can see it. Never include card numbers or PINs.</div></div>`;
  }
  if(o.txn_id)b+=`<div class="box"><b>Submitted details</b><div class="m">Method: ${esc(o.payment_method)} · Transaction ID: ${esc(o.txn_id)}</div>${o.note?`<div class="m">Note: ${esc(o.note)}</div>`:""}${shot?`<img src="${esc(shot)}" style="max-width:100%;border-radius:8px" alt="Payment screenshot">`:""}</div>`;
  if((au||[]).length)b+=`<h2>History</h2>${au.map(x=>`<div class="rw"><div class="g"><b>${esc(ST[x.to_status]||x.to_status)}</b> <span class="m">by ${x.actor==o.seller_id?"Seller":"Admin"}</span><div class="m">${new Date(x.created_at).toLocaleString("en-GB")}${x.note?" · "+esc(x.note):""}</div></div></div>`).join("")}`;
  return b}
 window.submitPay=async id=>{
- const m=$("#pM").value,t=$("#pT").value.trim(),n=$("#pN").value.trim().slice(0,300),f=$("#pS").files[0];
- if(!/^[A-Za-z0-9._-]{5,40}$/.test(t))return toast("Enter a valid transaction ID (5 to 40 letters or numbers)");
- if(!f||!/^image\/(jpeg|png|webp)$/.test(f.type)||f.size>8e6)return toast("Attach a JPG, PNG or WebP screenshot under 8 MB");
- const b=await shrink(f,1000,.7);if(!b||b.size>4e6)return toast("This file could not be read as an image");
- const btn=$("#pB");btn.disabled=true;const path=`${U.id}/${id}_${Date.now()}.jpg`,up=await sb.storage.from("payment-proofs").upload(path,b,{contentType:"image/jpeg"});
- if(up.error){btn.disabled=false;return toast(up.error.message)}
- const{error}=await sb.rpc("submit_payment",{p_id:id,p_method:m,p_txn:t,p_note:n,p_path:path});
- if(error){btn.disabled=false;return toast(error.code=="23505"?"This transaction ID was already submitted":error.message)}
- toast("Submitted. Waiting for admin verification.");route(1)};
+ const pm=x=>{const e=$("#pMsg");if(e)e.textContent=x;toast(x)},m=$("#pM").value,t=$("#pT").value.trim(),n=$("#pN").value.trim().slice(0,300),f=$("#pS").files[0];
+ if(!/^[A-Za-z0-9._-]{5,40}$/.test(t))return pm("Transaction ID: 5 to 40 letters or numbers, no spaces");
+ if(!f)return pm("Please choose a screenshot first (tap Choose File)");
+ if(f.size>15e6||(f.type&&!/^image\//.test(f.type)))return pm("This file cannot be used (type: "+(f.type||"unknown")+", "+Math.round(f.size/1024)+" KB). Choose a photo or screenshot.");
+ pm("Preparing screenshot...");const b=await shrink(f,1000,.7);if(!b||b.size>4e6)return pm("Could not read this file as an image (type: "+(f.type||"unknown")+"). Try another screenshot.");
+ const btn=$("#pB");btn.disabled=true;pm("Uploading screenshot...");const path=`${U.id}/${id}_${Date.now()}.jpg`,up=await sb.storage.from("payment-proofs").upload(path,b,{contentType:"image/jpeg"});
+ if(up.error){btn.disabled=false;return pm("Upload failed: "+up.error.message)}
+ pm("Submitting...");const{error}=await sb.rpc("submit_payment",{p_id:id,p_method:m,p_txn:t,p_note:n,p_path:path});
+ if(error){btn.disabled=false;return pm(error.code=="23505"?"This transaction ID was already submitted":"Could not submit: "+error.message)}
+ try{sessionStorage.removeItem("d_pT");sessionStorage.removeItem("d_pN")}catch(e){}toast("Submitted. Waiting for admin verification.");route(1)};
 const promos=po=>{const row=o=>{const p=PK.find(x=>x.code==o.package_code)||{name:o.package_code},s=ost(o);return `<div class="rw"><div class="g"><b>${esc(p.name)}</b> ${chip(o)}<div class="m">${o.listing_id?esc((o.listings||{}).title||"(deleted listing)"):"Seller Shop"} · ${rs(o.amount)}</div><div class="m">${o.status=="approved"?`Start: ${dd(o.starts_at)} · Expiry: ${dd(o.expires_at)}`:"Order "+esc(o.id)}${o.status=="rejected"&&o.reject_reason?" · Reason: "+esc(o.reject_reason):""}</div></div><a class="btn sm ${/^(Pending Payment|Rejected)$/.test(s)?"pri":""}" href="#/order/${esc(o.id)}">${s=="Pending Payment"?"Pay & submit":s=="Rejected"?"Resubmit":"Details"}</a></div>`};
  const g=(t,f)=>{const l=(po||[]).filter(o=>f.includes(ost(o)));return l.length?`<div class="m" style="margin-top:6px"><b>${t}</b></div>`+l.map(row).join(""):""};
  return g("Active promotions",["Active","Scheduled"])+g("Pending payment requests",["Pending Payment","Pending Verification"])+g("Expired and rejected",["Expired","Rejected"])||'<div class="empty">No promotions yet. Tap Promote on any listing.</div>'};
@@ -303,6 +304,8 @@ window.savePay=async()=>{const g=x=>$("#"+x).value.trim(),mob=x=>{x=x.replace(/\
  if(ib&&!/^PK\d{2}[A-Z]{4}[A-Z0-9]{16}$/.test(ib))return toast("IBAN looks wrong. Pakistani IBANs have 24 characters and start with PK");
  if((g("sEp")&&!g("sEn"))||(g("sJp")&&!g("sJn"))||(ib&&(!g("sBk")||!g("sBt"))))return toast("Fill the account name for each method you enable");
  const{error}=await sb.from("payment_settings").upsert([{key:"easypaisa",value:{name:g("sEn"),number:g("sEp")}},{key:"jazzcash",value:{name:g("sJn"),number:g("sJp")}},{key:"bank",value:{bank:g("sBk"),title:g("sBt"),iban:ib}}]);toast(error?error.message:"Payment settings saved")};
+window.sv=e=>{try{sessionStorage.setItem("d_"+e.id,e.value)}catch(_){}};const dr=k=>{try{return sessionStorage.getItem("d_"+k)||""}catch(e){return ""}};
+window.pf=i=>{const f=i.files[0];$("#pFn").textContent=f?"Selected: "+f.name+" ("+Math.round(f.size/1024)+" KB)":""};
 // ----- router
 const R={home,s:search,l:listing,u:seller,sell,dash,admin:adminP,auth:authP,p:pg,promote,order:orderP,shopplan,shop:shopP};
 async function route(keep){

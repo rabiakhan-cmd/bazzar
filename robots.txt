@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /*?dash
+Disallow: /*?admin
+Disallow: /*?sell
+Disallow: /*?auth
+Disallow: /*?order
+Disallow: /*?promote
+Sitemap: https://rabiakhan-cmd.github.io/bazzar/sitemap.xml
